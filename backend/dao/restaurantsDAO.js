@@ -1,6 +1,6 @@
 let restaurants
 
-export default class RestaurantDAO {
+export default class RestaurantsDAO {
     // Connect to database
     // Called as soon as connection stats and gets a reference to the database
     static async injectDB(conn) {
@@ -18,6 +18,8 @@ export default class RestaurantDAO {
     }
 
     // Gets list of all the restaurants in the database with specific options
+    // Options include the filters, page number, and how many restaurants per
+    // page
     static async getRestaurants({
         filters = null,
         page = 0,
@@ -26,7 +28,7 @@ export default class RestaurantDAO {
 
         let query 
         
-        // Filter by name, cuisine, or zipcode of the restaurant 
+        // Filters by name, cuisine, or zipcode of the restaurant 
         if (filters) {
             if ("name" in filters) {
                 query = { $text: { $search: filters["name"] }}
@@ -46,25 +48,26 @@ export default class RestaurantDAO {
             cursor = await restaurants.find(query)
         } catch (e) {
             console.error(`Unable to issue find command, ${e}`)
-            return { restaurantList: [], totalNumRestaurants: 0 }
+            return { restaurantsList: [], totalNumRestaurants: 0 }
         }
         
         // Limit the number of restaurants per page and get to a specific page
         // of the result based on filters 
-        const displayCursor = cursor.limit(restaurantPerPage).skip(restaurantPerPage * page)
+        const displayCursor = cursor.limit(restaurantsPerPage).skip(restaurantsPerPage * page)
         
         // Convert restaurants to an array, count the number of restaurants
         // and return them. If there was an error return error meassage with 
         // empty restuarants list and 0 count 
         try {
             const restaurantsList = await displayCursor.toArray()
-            const totalNumRestaurants = await restaurants.countDocument(query)
-            return { restaurantList, totalNumRestaurants }
+            const totalNumRestaurants = await restaurants.countDocuments(query)
+            
+            return [ restaurantsList, totalNumRestaurants ]
         } catch (e) {
             console.error (
-                `Unable  to convert cursor to array or problem counting documents, ${e}`,
+                `Unable to convert cursor to array or problem counting documents, ${e}`,
             )
-            return { restaurantList: [], totalNumRestaurants: 0 }
+            return { restaurantsList: [], totalNumRestaurants: 0 }
         }
     }
 }
