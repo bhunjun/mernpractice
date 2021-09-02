@@ -8,6 +8,7 @@ export default class RestaurantsDAO {
         if (restaurants) {
             return
         }
+        
         try {
             restaurants = await conn.db(process.env.RESTREVIEWS_NS).collection("restaurants")
         } catch (e) {
